@@ -24,6 +24,22 @@
     .cart-badge { background: var(--accent); color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 99px; padding: 1px 6px; min-width: 18px; text-align: center; display: none; }
     .cart-badge.visible { display: inline-block; }
 
+    /* SEARCH BAR */
+    .search-wrap { max-width: 560px; margin: 0 auto 0.5rem; padding: 0 1rem; }
+    .search-box { display: flex; align-items: center; gap: 0.5rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 0.55rem 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
+    .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,82,42,0.12); }
+    .search-icon { font-size: 1rem; color: var(--muted); flex-shrink: 0; }
+    .search-input { flex: 1; border: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 0.92rem; color: var(--text); outline: none; }
+    .search-input::placeholder { color: var(--muted); }
+    .search-clear { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; padding: 0 2px; line-height: 1; display: none; transition: color 0.15s; }
+    .search-clear:hover { color: var(--accent); }
+    .search-clear.visible { display: inline-block; }
+    .search-count { text-align: center; font-size: 0.78rem; color: var(--muted); margin-bottom: 1rem; min-height: 1.2em; }
+    .no-results { grid-column: 1 / -1; text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .no-results .no-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .no-results p { font-size: 0.95rem; }
+    .product-card.hidden { display: none; }
+
     /* HERO */
     .page-hero { text-align: center; padding: 4rem 1rem 2rem; }
     .page-hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem, 5vw, 3.5rem); letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 0.6rem; }
@@ -200,7 +216,17 @@
     <p>Handpicked just for you — quality you can trust.</p>
   </section>
 
-  <div class="shop-grid">
+  <!-- SEARCH BAR -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search products…" oninput="filterProducts()" autocomplete="off"/>
+      <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear search">✕</button>
+    </div>
+  </div>
+  <div class="search-count" id="searchCount"></div>
+
+  <div class="shop-grid" id="shopGrid">
 
     <!-- ═══════════════════════════════════════════════
          PRODUCT CARD — Copy & paste this block to add more
@@ -619,6 +645,53 @@
     }
 
     renderCart();
+
+    // ── SEARCH / FILTER ──
+    function filterProducts() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const cards = document.querySelectorAll('#shopGrid .product-card');
+      const clearBtn = document.getElementById('searchClear');
+      const countEl = document.getElementById('searchCount');
+      let noResultsEl = document.getElementById('noResults');
+
+      clearBtn.classList.toggle('visible', q.length > 0);
+
+      let visible = 0;
+      cards.forEach(card => {
+        const name = (card.querySelector('.product-name')?.textContent || '').toLowerCase();
+        const desc = (card.querySelector('.product-desc')?.textContent || '').toLowerCase();
+        const badge = (card.querySelector('.product-badge')?.textContent || '').toLowerCase();
+        const match = !q || name.includes(q) || desc.includes(q) || badge.includes(q);
+        card.classList.toggle('hidden', !match);
+        if (match) visible++;
+      });
+
+      // Show/hide no-results message
+      if (!noResultsEl) {
+        noResultsEl = document.createElement('div');
+        noResultsEl.id = 'noResults';
+        noResultsEl.className = 'no-results';
+        noResultsEl.innerHTML = '<div class="no-icon">🔍</div><p>No products match your search.</p>';
+        document.getElementById('shopGrid').appendChild(noResultsEl);
+      }
+      noResultsEl.style.display = (q && visible === 0) ? 'block' : 'none';
+
+      // Update count label
+      const total = cards.length;
+      if (q) {
+        countEl.textContent = visible === 0
+          ? 'No results found'
+          : `Showing ${visible} of ${total} product${total !== 1 ? 's' : ''}`;
+      } else {
+        countEl.textContent = '';
+      }
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      filterProducts();
+      document.getElementById('searchInput').focus();
+    }
   </script>
 </body>
 </html>
